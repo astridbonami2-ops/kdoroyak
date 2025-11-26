@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission d'Évasion - Prison Island</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .bounce {
+            animation: bounce 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes evilLaugh {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+        .evil-laugh {
+            animation: evilLaugh 0.5s ease-in-out;
+        }
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .flicker {
+            animation: flicker 0.15s infinite;
+        }
+        @keyframes slideDown {
+            from { 
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .slide-down {
+            animation: slideDown 1s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-red-900 min-h-screen">
+    <div id="app"></div>
+
+    <script>
+        const enigmas = {
+            1: {
+                question: "CELLULE #1 - LE CODE DU PRISONNIER",
+                riddle: "Je suis dans ÉVASION mais pas dans MAISON,\nJe suis dans AVENTURE mais pas dans LECTURE,\nJe suis dans DEVOIR mais pas dans DÉFI.\nQuelle lettre suis-je ?",
+                answer: "V",
+                hint: "Cherche la lettre commune aux trois premiers mots, mais absente des seconds...",
+                explanation: "La lettre V est présente dans ÉVASION, AVENTURE et DEVOIR, mais pas dans MAISON, LECTURE et DÉFI !"
+            },
+            2: {
+                question: "CELLULE #2 - L'ÉNIGME DES CELLULES",
+                riddle: "Prison Island possède un certain nombre de cellules.\nSi tu multiplies ce nombre par 2, puis divises par 4,\ntu obtiens 16. Combien y a-t-il de cellules ?",
+                answer: "32",
+                hint: "Travaille à l'envers : 16 × 4 = ? puis divise par 2",
+                explanation: "16 × 4 = 64, puis 64 ÷ 2 = 32 cellules !"
+            },
+            3: {
+                question: "CELLULE #3 - L'ÉNIGME DU TEMPS",
+                riddle: "Tu as 2 heures pour t'évader de Prison Island.\nSi tu passes 3 minutes dans chaque cellule sans pause,\ncombien de minutes te restera-t-il après avoir visité\ntoutes les 32 cellules ?\n\n(Réponds juste le nombre de minutes)",
+                answer: "24",
+                hint: "Calcule d'abord le temps total passé dans les cellules : 32 × 3 = ? minutes. Puis soustrais ce nombre de 120 minutes (2 heures).",
+                explanation: "32 cellules × 3 minutes = 96 minutes. 120 minutes (2h) - 96 minutes = 24 minutes restantes !"
+            },
+            4: {
+                question: "CELLULE #4 - LE CODE DE LA PORTE",
+                riddle: "Un gardien te dit : 'Le code secret a 4 chiffres.\nLe premier est le double de 2,\nLe deuxième est la moitié de 2,\nLe troisième est 3 au carré,\nLe quatrième est le nombre de côtés d'un pentagone.'\n\nQuel est ce code ? (exemple de format: 1234)",
+                answer: "4195",
+                hint: "Double de 2 = 4, moitié de 2 = 1, 3² = 9, pentagone = 5 côtés",
+                explanation: "Le code est 4-1-9-5 : double de 2 (4), moitié de 2 (1), 3² (9), côtés d'un pentagone (5) !"
+            },
+            5: {
+                question: "CELLULE #5 - L'ANAGRAMME FINALE",
+                riddle: "Déchiffre cette anagramme pour découvrir\nle type d'expérience qui t'attend :\n\n'VENTRE USA'\n\nQuel mot se cache derrière ?",
+                answer: "AVENTURE",
+                hint: "Réarrange toutes les lettres... c'est ce qui t'attend à Prison Island !",
+                explanation: "VENTRE USA est l'anagramme de AVENTURE - ce qui t'attend à Prison Island !"
+            }
+        };
+
+        let stage = 0; // 0 = page d'accueil
+        let userAnswer = '';
+        let error = '';
+        let showHint = false;
+
+        function render() {
+            const app = document.getElementById('app');
+            
+            // Page d'accueil
+            if (stage === 0) {
+                app.innerHTML = `
+                    <div class="flex items-center justify-center min-h-screen p-4">
+                        <div class="max-w-3xl w-full bg-gradient-to-b from-red-950 to-black rounded-lg p-12 shadow-2xl border-8 border-red-900 text-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-red-900 opacity-20 flicker"></div>
+                            
+                            <div class="relative z-10 slide-down">
+                                <div class="text-8xl mb-8">👹</div>
+                                
+                                <h1 class="text-6xl font-bold mb-8 text-red-500 tracking-widest" style="font-family: 'Courier New', monospace; text-shadow: 3px 3px 0px rgba(0,0,0,0.5);">
+                                    HWAHWAHWAHWAH
+                                </h1>
+                                
+                                <div class="mb-8">
+                                    <p class="text-4xl font-bold text-amber-100 mb-4" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                                        BIENVENUE...
+                                    </p>
+                                    <p class="text-2xl text-red-300 mb-6">
+                                        dans ton pire cauchemar ! 😈
+                                    </p>
+                                </div>
+                                
+                                <div class="bg-black bg-opacity-60 p-6 rounded-lg border-4 border-red-800 mb-8">
+                                    <p class="text-lg text-amber-200 mb-3">
+                                        Tu es maintenant prisonnier(ère) de Prison Island...
+                                    </p>
+                                    <p class="text-lg text-amber-200 mb-3">
+                                        Pour t'échapper, tu devras résoudre 5 énigmes diaboliques ! 🔐
+                                    </p>
+                                    <p class="text-xl font-bold text-red-400 mt-4">
+                                        Oses-tu relever le défi ? ⛓️
+                                    </p>
+                                </div>
+                                
+                                <button 
+                                    id="start-btn"
+                                    class="bg-red-700 hover:bg-red-600 text-white font-bold py-4 px-12 rounded-lg text-2xl transition-all transform hover:scale-110 active:scale-95 shadow-2xl border-4 border-red-900 pulse"
+                                >
+                                    🔓 COMMENCER L'ÉVASION
+                                </button>
+                                
+                                <div class="mt-8 text-gray-500 text-sm">
+                                    <p>⚠️ Prépare-toi mentalement... ⚠️</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('start-btn').addEventListener('click', () => {
+                    const btn = document.getElementById('start-btn');
+                    btn.classList.add('evil-laugh');
+                    setTimeout(() => {
+                        stage = 1;
+                        render();
+                    }, 500);
+                });
+                return;
+            }
+
+            // Page de victoire
+            if (stage === 6) {
+                app.innerHTML = `
+                    <div class="flex items-center justify-center min-h-screen p-4">
+                        <div class="max-w-2xl w-full bg-gradient-to-b from-amber-100 to-amber-200 rounded-lg p-8 shadow-2xl border-8 border-amber-900 text-center fade-in">
+                            <div class="text-6xl mb-6 bounce">🏆</div>
+                            <h1 class="text-4xl font-bold mb-6 text-gray-900">🎉 FÉLICITATIONS ! 🎉</h1>
+                            <div class="bg-red-800 text-amber-100 p-6 rounded-lg mb-6 border-4 border-amber-900">
+                                <p class="text-2xl font-bold mb-4">Tu as résolu toutes les énigmes !</p>
+                                <p class="text-xl mb-2">Ton cadeau est révélé :</p>
+                                <div class="text-3xl font-bold my-4 pulse">
+                                    ⛓️ PRISON ISLAND BRUSSELS ⛓️
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-inner border-2 border-gray-800">
+                                <p class="text-lg mb-4 text-gray-800">
+                                    <strong>🎁 Tu es invité(e) à vivre une aventure extraordinaire !</strong>
+                                </p>
+                                <p class="text-md text-gray-700 mb-2">📍 32 cellules remplies d'énigmes</p>
+                                <p class="text-md text-gray-700 mb-2">⏱️ 2 heures d'évasion intense</p>
+                                <p class="text-md text-gray-700 mb-4">👥 Une expérience inoubliable entre amis</p>
+                                <div class="mt-6 pt-6 border-t-2 border-gray-300">
+                                    <p class="text-xl font-bold text-red-800">Offert avec amour par ton ami(e) ! 💝</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Pages d'énigmes
+            const currentEnigma = enigmas[stage];
+            const progressPercent = (stage / 5) * 100;
+
+            app.innerHTML = `
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="max-w-2xl w-full">
+                        <div class="mb-6 bg-gray-700 rounded-full h-3 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-yellow-600 to-red-600 transition-all duration-500" style="width: ${progressPercent}%"></div>
+                        </div>
+
+                        <div class="bg-gradient-to-b from-amber-100 to-amber-200 rounded-lg p-8 shadow-2xl border-8 border-amber-900 fade-in">
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-10 h-10 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                    <h1 class="text-2xl font-bold text-gray-900">MISSION D'ÉVASION</h1>
+                                </div>
+                                <div class="text-xl font-bold text-red-800">${stage}/5</div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-6 mb-6 shadow-lg border-4 border-gray-800">
+                                <h2 class="text-xl font-bold mb-4 text-red-800 flex items-center gap-2">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                    </svg>
+                                    ${currentEnigma.question}
+                                </h2>
+                                <div class="bg-gray-100 p-4 rounded border-2 border-gray-300 mb-4">
+                                    <p class="text-lg text-gray-800 whitespace-pre-line font-mono">${currentEnigma.riddle}</p>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-bold mb-2 text-gray-700">Ta réponse :</label>
+                                    <input 
+                                        type="text" 
+                                        id="answer-input"
+                                        class="w-full p-3 border-4 border-gray-800 rounded-lg text-xl font-bold text-center uppercase focus:outline-none focus:border-red-800 focus:ring-2 focus:ring-red-600"
+                                        placeholder="Entre ta réponse..."
+                                        value="${userAnswer}"
+                                    />
+                                </div>
+
+                                ${error ? `
+                                    <div class="mb-4 p-3 bg-red-100 border-2 border-red-800 rounded-lg flex items-center gap-2 text-red-800">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                        </svg>
+                                        <span>${error}</span>
+                                    </div>
+                                ` : ''}
+
+                                <div class="flex gap-3">
+                                    <button 
+                                        id="check-btn"
+                                        class="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg"
+                                    >
+                                        ✓ Vérifier
+                                    </button>
+                                    <button 
+                                        id="hint-btn"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg"
+                                    >
+                                        💡 Indice
+                                    </button>
+                                </div>
+
+                                ${showHint ? `
+                                    <div class="mt-4 p-4 bg-blue-100 border-2 border-blue-800 rounded-lg">
+                                        <p class="text-blue-900 font-semibold">💡 ${currentEnigma.hint}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <div class="text-center text-gray-700 text-sm">
+                                <p class="font-bold">Résous les 5 énigmes pour découvrir ton cadeau ! 🎁</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Event listeners
+            const input = document.getElementById('answer-input');
+            const checkBtn = document.getElementById('check-btn');
+            const hintBtn = document.getElementById('hint-btn');
+
+            input.addEventListener('input', (e) => {
+                userAnswer = e.target.value;
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+
+            checkBtn.addEventListener('click', checkAnswer);
+            hintBtn.addEventListener('click', () => {
+                showHint = !showHint;
+                render();
+            });
+
+            input.focus();
+        }
+
+        function checkAnswer() {
+            const currentEnigma = enigmas[stage];
+            const answer = userAnswer.toUpperCase().trim();
+
+            if (answer === currentEnigma.answer) {
+                error = '';
+                showHint = false;
+                userAnswer = '';
+                if (stage < 5) {
+                    setTimeout(() => {
+                        stage++;
+                        render();
+                    }, 800);
+                } else {
+                    stage = 6;
+                    render();
+                }
+            } else {
+                error = '❌ Ce n\'est pas la bonne réponse... Réessaie !';
+                render();
+            }
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
